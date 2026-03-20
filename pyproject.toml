@@ -9,4 +9,5 @@ dependencies = [
     "maxapi>=0.9.17",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
+    "python-dotenv>=1.2.2",
 ]
