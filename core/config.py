@@ -7,6 +7,7 @@ load_dotenv()
 
 class Settings(BaseSettings):
     TOKEN: str = os.getenv("TOKEN")
+    API_URL: str = os.getenv("API_URL")
 
 
 settings = Settings()
