@@ -1,11 +1,12 @@
 import asyncio
 from maxapi import Dispatcher
 from core.config import bot
+from app.start.headers import router as start_router
 
 dp = Dispatcher()
 
 async def main():
-    dp.include_routers()
+    dp.include_routers(start_router)
 
     await asyncio.gather(
         dp.start_polling(bot)
