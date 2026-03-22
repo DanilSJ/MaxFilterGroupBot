@@ -1,6 +1,6 @@
 import re
 import string
-from maxapi import Router, F
+from maxapi import Router
 from maxapi.types import MessageCreated, Command
 from app.api.api import get_group
 
@@ -40,7 +40,7 @@ async def start(event: MessageCreated):
 
 @router.message_created()
 async def echo(event: MessageCreated):
-    group_id = 1
+    group_id = event.chat.chat_id
     r = await get_group(group_id)
 
     if r.status_code != 200:
