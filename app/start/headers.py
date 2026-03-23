@@ -40,7 +40,7 @@ async def start(event: MessageCreated):
 
 @router.message_created()
 async def echo(event: MessageCreated):
-    group_id = event.chat.chat_id
+    group_id = abs(event.chat.chat_id)
     print(group_id)
     r = await get_group(group_id)
     print(r)
