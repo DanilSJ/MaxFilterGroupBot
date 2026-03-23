@@ -42,12 +42,12 @@ async def start(event: MessageCreated):
 async def echo(event: MessageCreated):
     group_id = event.chat.chat_id
     r = await get_group(group_id)
-
+    print(r)
     if r.status_code != 200:
         return False
     r = r.json()
 
-
+    print(r)
     if r["bad_words"]:
         check = await check_words_in_text(event.message.body.text, r["bad_words_text"])
         if check:
@@ -56,6 +56,7 @@ async def echo(event: MessageCreated):
                 return await event.message.answer(r["message_delete_text"])
 
     if r["repost"]:
+        print("xxxx")
         if event.message.link:
             await event.message.delete()
             if r["message_delete"]:
