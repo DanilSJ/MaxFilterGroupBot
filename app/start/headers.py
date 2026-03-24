@@ -165,10 +165,10 @@ async def echo(event: MessageCreated):
 
 async def auto_delete_messages():
     """
-    Каждые 5 минут удаляет сообщения бота
+    Каждые 2 минут удаляет сообщения бота
     """
     while True:
-        await asyncio.sleep(300)
+        await asyncio.sleep(120)
 
         for msg in bot_messages[:]:
             try:
