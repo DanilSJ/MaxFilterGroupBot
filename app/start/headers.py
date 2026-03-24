@@ -29,36 +29,23 @@ async def check_words_in_text(text, word_list):
     return bool(words_in_text & target_words)
 
 
-async def has_link(text):
+async def has_link(text, event):
     """
     Проверяет наличие ссылок в тексте с более строгими правилами
     """
-    if not text:
+
+    try:
+        if hasattr(event, 'message') and hasattr(event.message, 'body'):
+            if hasattr(event.message.body, 'markup') and event.message.body.markup:
+                for markup_item in event.message.body.markup:
+                    if hasattr(markup_item, 'type'):
+                        if markup_item.type == 'link' or markup_item.type == 'LINK':
+                            return True
+                        if hasattr(markup_item.type, 'LINK') and markup_item.type.LINK:
+                            return True
+    except (IndexError, AttributeError, TypeError) as e:
         return False
 
-    # Паттерн для полных URL с протоколом
-    full_url_pattern = r'(?:https?://|ftp://)[^\s<>"\'{}|\\^`\[\]]+(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
-
-    # Паттерн для URL без протокола, но с www
-    www_pattern = r'www\.[^\s<>"\'{}|\\^`\[\]]+(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
-
-    # Паттерн для доменов верхнего уровня (более строгий)
-    tld_pattern = r'\b[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]?\.(?:com|ru|net|org|edu|gov|info|xyz|club|site|online|store|blog|link|app|[a-z]{2})\b(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
-
-    # Паттерн для IP-адресов
-    ip_pattern = r'\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b(?::\d+)?(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
-
-    # Паттерн для коротких ссылок (bit.ly, goo.gl и т.д.)
-    short_url_pattern = r'\b[a-zA-Z0-9]{2,}\.(?:ly|gl|is|me|co|io|ai|app)\b(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
-
-    # Комбинируем все паттерны
-    patterns = [full_url_pattern, www_pattern, tld_pattern, ip_pattern, short_url_pattern]
-    combined_pattern = '|'.join(f'({pattern})' for pattern in patterns)
-
-    # Проверяем наличие ссылок
-    match = re.search(combined_pattern, text, re.IGNORECASE)
-
-    return bool(match)
 
 async def format_message_with_username(message_text, user):
     """
@@ -155,7 +142,7 @@ async def echo(event: MessageCreated):
                         )
 
         if r["link"]:
-            check = await has_link(event.message.body.text)
+            check = await has_link(event.message.body.text, event)
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
