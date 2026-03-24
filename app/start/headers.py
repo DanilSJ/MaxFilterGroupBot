@@ -7,6 +7,8 @@ from core.config import bot
 
 router = Router()
 
+go = False
+
 
 async def check_words_in_text(text, word_list):
     """
