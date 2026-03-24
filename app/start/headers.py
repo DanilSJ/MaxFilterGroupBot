@@ -26,12 +26,26 @@ async def check_words_in_text(text, word_list):
 
     return bool(words_in_text & target_words)
 
+
 async def has_link(text):
     """
     Проверяет наличие ссылок с разными протоколами
     """
     url_pattern = r'(?:https?://|ftp://|www\.)[^\s<>"\'{}|\\^`\[\]]+(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
     return bool(re.search(url_pattern, text, re.IGNORECASE))
+
+
+async def format_message_with_username(message_text, username):
+    """
+    Заменяет @username в тексте сообщения на реальный username пользователя
+    """
+    if not message_text or not username:
+        return message_text
+
+    if '@username' in message_text:
+        return message_text.replace('@username', f'@{username}')
+    return message_text
+
 
 @router.message_created(Command('start'))
 async def start(event: MessageCreated):
@@ -48,33 +62,41 @@ async def echo(event: MessageCreated):
         return False
     r = r.json()
     try:
+        # Получаем username пользователя, чье сообщение проверяем
+        user_username = None
+        if hasattr(event.message, 'from_user') and event.message.from_user:
+            user_username = event.message.sender.username = user_username
+
         if r["bad_words"]:
             check = await check_words_in_text(event.message.body.text, r["bad_words_text"])
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
-                    return await event.message.answer(r["message_bad_text"])
+                    message_text = await format_message_with_username(r["message_bad_text"], user_username)
+                    return await event.message.answer(message_text)
 
         if r["repost"]:
             if event.message.link:
                 await event.message.delete()
                 if r["message_delete"]:
-                    return await event.message.answer(r["message_repost_text"])
+                    message_text = await format_message_with_username(r["message_repost_text"], user_username)
+                    return await event.message.answer(message_text)
 
         if r["stop_word"]:
             check = await check_words_in_text(event.message.body.text, r["stop_word_text"])
             if check:
                 await event.message.delete()
-
                 if r["message_delete"]:
-                    return await event.message.answer(r["message_stop_word_text"])
+                    message_text = await format_message_with_username(r["message_stop_word_text"], user_username)
+                    return await event.message.answer(message_text)
 
         if r["link"]:
             check = await has_link(event.message.body.text)
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
-                    return await event.message.answer(r["message_link_text"])
+                    message_text = await format_message_with_username(r["message_link_text"], user_username)
+                    return await event.message.answer(message_text)
 
     except Exception as e:
         pass
