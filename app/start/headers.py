@@ -3,6 +3,8 @@ import string
 from maxapi import Router
 from maxapi.types import MessageCreated, Command
 from app.api.api import get_group
+from maxapi.enums.parse_mode import ParseMode
+from core.config import bot
 
 router = Router()
 
@@ -35,16 +37,40 @@ async def has_link(text):
     return bool(re.search(url_pattern, text, re.IGNORECASE))
 
 
-async def format_message_with_username(message_text, username):
+async def format_message_with_username(message_text, user):
     """
-    Заменяет @username в тексте сообщения на реальный username пользователя
+    Заменяет @username в тексте сообщения на упоминание пользователя
     """
-    if not message_text or not username:
+    if not message_text or not user:
         return message_text
 
+    display_name = user.full_name if user.full_name else f"Пользователь {user.user_id}"
+    user_link = f"max://user/{user.user_id}"
+
     if '@username' in message_text:
-        return message_text.replace('@username', f'@{username}')
+        mention = f'<a href="{user_link}">{display_name}</a>'
+        return message_text.replace('@username', mention)
+
     return message_text
+
+
+async def is_chat_admin(chat_id, user_id):
+    """
+    Проверяет, является ли пользователь администратором чата
+    """
+    try:
+        admins = await bot.get_list_admin_chat(chat_id)
+
+        if hasattr(admins, 'members') and admins.members:
+            for member in admins.members:
+                if member.is_admin and member.user_id == user_id:
+                    return True
+
+        return False
+
+    except Exception as e:
+        print(f"Error checking admin status: {e}")
+        return False
 
 
 @router.message_created(Command('start'))
@@ -61,44 +87,64 @@ async def echo(event: MessageCreated):
     if r.status_code != 200:
         return False
     r = r.json()
+
     try:
-        # Получаем username пользователя, чье сообщение проверяем
-        user_username = None
-        if hasattr(event.message, 'from_user') and event.message.from_user:
-            user_username = event.message.sender.username = user_username
+        user = event.message.sender
+
+        is_admin_user = await is_chat_admin(event.chat.chat_id, user.user_id)
+
+        if is_admin_user:
+            return True
 
         if r["bad_words"]:
             check = await check_words_in_text(event.message.body.text, r["bad_words_text"])
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
-                    message_text = await format_message_with_username(r["message_bad_text"], user_username)
-                    return await event.message.answer(message_text)
+                    message_text = await format_message_with_username(r["message_bad_text"], user)
+                    if message_text:
+                        return await event.message.answer(
+                            message_text,
+                            parse_mode=ParseMode.HTML
+                        )
 
         if r["repost"]:
             if event.message.link:
                 await event.message.delete()
                 if r["message_delete"]:
-                    message_text = await format_message_with_username(r["message_repost_text"], user_username)
-                    return await event.message.answer(message_text)
+                    message_text = await format_message_with_username(r["message_repost_text"], user)
+                    if message_text:
+                        return await event.message.answer(
+                            message_text,
+                            parse_mode=ParseMode.HTML
+                        )
 
         if r["stop_word"]:
             check = await check_words_in_text(event.message.body.text, r["stop_word_text"])
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
-                    message_text = await format_message_with_username(r["message_stop_word_text"], user_username)
-                    return await event.message.answer(message_text)
+                    message_text = await format_message_with_username(r["message_stop_word_text"], user)
+                    if message_text:
+                        return await event.message.answer(
+                            message_text,
+                            parse_mode=ParseMode.HTML
+                        )
 
         if r["link"]:
             check = await has_link(event.message.body.text)
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
-                    message_text = await format_message_with_username(r["message_link_text"], user_username)
-                    return await event.message.answer(message_text)
+                    message_text = await format_message_with_username(r["message_link_text"], user)
+                    if message_text:
+                        return await event.message.answer(
+                            message_text,
+                            parse_mode=ParseMode.HTML
+                        )
 
     except Exception as e:
+        print(f"Error: {e}")
         pass
 
     return True
