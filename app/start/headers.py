@@ -1,4 +1,3 @@
-import re
 import string
 from maxapi import Router
 from maxapi.types import MessageCreated, Command
@@ -43,7 +42,7 @@ async def has_link(event):
                             return True
                         if hasattr(markup_item.type, 'LINK') and markup_item.type.LINK:
                             return True
-    except (IndexError, AttributeError, TypeError) as e:
+    except (IndexError, AttributeError, TypeError):
         return False
 
 
