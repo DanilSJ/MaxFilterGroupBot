@@ -53,34 +53,29 @@ async def echo(event: MessageCreated):
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
-                    return await event.message.answer(r["message_delete_text"])
+                    return await event.message.answer(r["message_bad_text"])
 
         if r["repost"]:
-            print("xxxx")
             if event.message.link:
                 await event.message.delete()
                 if r["message_delete"]:
-                    return await event.message.answer(r["message_delete_text"])
+                    return await event.message.answer(r["message_repost_text"])
 
         if r["stop_word"]:
             check = await check_words_in_text(event.message.body.text, r["stop_word_text"])
             if check:
-                print("tru")
                 await event.message.delete()
 
                 if r["message_delete"]:
-                    return await event.message.answer(r["message_delete_text"])
+                    return await event.message.answer(r["message_stop_word_text"])
 
         if r["link"]:
             check = await has_link(event.message.body.text)
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
-                    return await event.message.answer(r["message_delete_text"])
+                    return await event.message.answer(r["message_link_text"])
 
-        if r["message_delete"]:
-            await event.message.delete()
-            return await event.message.answer(r["message_delete_text"])
     except Exception as e:
         pass
 
