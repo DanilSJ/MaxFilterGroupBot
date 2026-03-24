@@ -31,11 +31,34 @@ async def check_words_in_text(text, word_list):
 
 async def has_link(text):
     """
-    Проверяет наличие ссылок с разными протоколами
+    Проверяет наличие ссылок в тексте с более строгими правилами
     """
-    url_pattern = r'(?:https?://|ftp://|www\.)[^\s<>"\'{}|\\^`\[\]]+(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
-    return bool(re.search(url_pattern, text, re.IGNORECASE))
+    if not text:
+        return False
 
+    # Паттерн для полных URL с протоколом
+    full_url_pattern = r'(?:https?://|ftp://)[^\s<>"\'{}|\\^`\[\]]+(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
+
+    # Паттерн для URL без протокола, но с www
+    www_pattern = r'www\.[^\s<>"\'{}|\\^`\[\]]+(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
+
+    # Паттерн для доменов верхнего уровня (более строгий)
+    tld_pattern = r'\b[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]?\.(?:com|ru|net|org|edu|gov|info|xyz|club|site|online|store|blog|link|app|[a-z]{2})\b(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
+
+    # Паттерн для IP-адресов
+    ip_pattern = r'\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b(?::\d+)?(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
+
+    # Паттерн для коротких ссылок (bit.ly, goo.gl и т.д.)
+    short_url_pattern = r'\b[a-zA-Z0-9]{2,}\.(?:ly|gl|is|me|co|io|ai|app)\b(?:/[^\s<>"\'{}|\\^`\[\]]*)?'
+
+    # Комбинируем все паттерны
+    patterns = [full_url_pattern, www_pattern, tld_pattern, ip_pattern, short_url_pattern]
+    combined_pattern = '|'.join(f'({pattern})' for pattern in patterns)
+
+    # Проверяем наличие ссылок
+    match = re.search(combined_pattern, text, re.IGNORECASE)
+
+    return bool(match)
 
 async def format_message_with_username(message_text, user):
     """
