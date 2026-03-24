@@ -4,11 +4,11 @@ from maxapi.types import MessageCreated, Command
 from app.api.api import get_group
 from maxapi.enums.parse_mode import ParseMode
 from core.config import bot
+import asyncio
 
 router = Router()
 
-go = False
-
+bot_messages = []
 
 async def check_words_in_text(text, word_list):
     """
@@ -147,13 +147,32 @@ async def echo(event: MessageCreated):
                 if r["message_delete"]:
                     message_text = await format_message_with_username(r["message_link_text"], user)
                     if message_text:
-                        return await event.message.answer(
+                        msg = await event.message.answer(
                             message_text,
                             parse_mode=ParseMode.HTML
                         )
 
+                        print(msg.message.body.mid)
+
+                        bot_messages.append(msg.message.body.mid)
+                        return msg
     except Exception as e:
         print(f"Error: {e}")
         pass
 
     return True
+
+
+async def auto_delete_messages():
+    """
+    Каждые 5 минут удаляет сообщения бота
+    """
+    while True:
+        await asyncio.sleep(300)
+
+        for msg in bot_messages[:]:
+            try:
+                await bot.delete_message(msg)
+                bot_messages.remove(msg)
+            except Exception as e:
+                print(f"Ошибка удаления: {e}")
