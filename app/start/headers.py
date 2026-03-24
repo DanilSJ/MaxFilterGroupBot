@@ -29,7 +29,7 @@ async def check_words_in_text(text, word_list):
     return bool(words_in_text & target_words)
 
 
-async def has_link(text, event):
+async def has_link(event):
     """
     Проверяет наличие ссылок в тексте с более строгими правилами
     """
@@ -142,7 +142,7 @@ async def echo(event: MessageCreated):
                         )
 
         if r["link"]:
-            check = await has_link(event.message.body.text, event)
+            check = await has_link(event)
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
