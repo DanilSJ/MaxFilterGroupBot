@@ -1,4 +1,6 @@
 import string
+import time
+
 from maxapi import Router
 from maxapi.types import MessageCreated, Command
 from app.api.api import get_group
@@ -87,82 +89,125 @@ async def start(event: MessageCreated):
     await event.message.answer("Привет, чтобы настроить зайди в miniapp")
 
 
+group_cache = {}
+CACHE_TTL = 60  # Время жизни кэша в секундах
+
+
+async def get_group_cached(group_id: int):
+    """
+    Получает данные группы с кэшированием
+    """
+    current_time = time.time()
+
+    # Проверяем наличие данных в кэше и их актуальность
+    if group_id in group_cache:
+        cached_data, cached_time = group_cache[group_id]
+        if current_time - cached_time < CACHE_TTL:
+            return cached_data
+
+    # Если данных нет или они устарели, делаем запрос
+    try:
+        r = await get_group(group_id)
+        if r.status_code == 200:
+            data = r.json()
+            group_cache[group_id] = (data, current_time)
+            return data
+        else:
+            return None
+    except Exception as e:
+        print(f"Error fetching group {group_id}: {e}")
+        return None
+
+
+async def invalidate_group_cache(group_id: int):
+    """
+    Очищает кэш для конкретной группы (можно вызывать при обновлении настроек)
+    """
+    if group_id in group_cache:
+        del group_cache[group_id]
+
+
 @router.message_created()
 async def echo(event: MessageCreated):
     group_id = abs(event.chat.chat_id)
-    print("wddwdw")
-    r = await get_group(group_id)
-    print(r)
-    if r.status_code != 200:
+    print("dwdw")
+    # Получаем данные из кэша вместо прямого запроса
+    r = await get_group_cached(group_id)
+    if not r:
         return False
-    r = r.json()
 
     try:
         user = event.message.sender
 
+        # Быстрая проверка на админа (тоже можно закэшировать)
         is_admin_user = await is_chat_admin(event.chat.chat_id, user.user_id)
-
         if is_admin_user:
             return True
 
-        if r["bad_words"]:
-            check = await check_words_in_text(event.message.body.text, r["bad_words_text"])
-            if check:
+        # Проверки с ранним выходом для оптимизации
+        text = event.message.body.text if hasattr(event.message.body, 'text') else ""
+
+        # Проверка плохих слов
+        if r.get("bad_words", False) and r.get("bad_words_text"):
+            if await check_words_in_text(text, r["bad_words_text"]):
                 await event.message.delete()
-                if r["message_delete"]:
-                    message_text = await format_message_with_username(r["message_bad_text"], user)
+                if r.get("message_delete", False):
+                    message_text = await format_message_with_username(
+                        r.get("message_bad_text", ""), user
+                    )
                     if message_text:
                         return await event.message.answer(
                             message_text,
                             parse_mode=ParseMode.HTML
                         )
 
-        if r["repost"]:
-            if event.message.link:
+        # Проверка репостов
+        if r.get("repost", False) and event.message.link:
+            await event.message.delete()
+            if r.get("message_delete", False):
+                message_text = await format_message_with_username(
+                    r.get("message_repost_text", ""), user
+                )
+                if message_text:
+                    return await event.message.answer(
+                        message_text,
+                        parse_mode=ParseMode.HTML
+                    )
+
+        # Проверка стоп-слов
+        if r.get("stop_word", False) and r.get("stop_word_text"):
+            if await check_words_in_text(text, r["stop_word_text"]):
                 await event.message.delete()
-                if r["message_delete"]:
-                    message_text = await format_message_with_username(r["message_repost_text"], user)
+                if r.get("message_delete", False):
+                    message_text = await format_message_with_username(
+                        r.get("message_stop_word_text", ""), user
+                    )
                     if message_text:
                         return await event.message.answer(
                             message_text,
                             parse_mode=ParseMode.HTML
                         )
 
-        if r["stop_word"]:
-            check = await check_words_in_text(event.message.body.text, r["stop_word_text"])
-            if check:
+        # Проверка ссылок
+        if r.get("link", False):
+            if await has_link(event):
                 await event.message.delete()
-                if r["message_delete"]:
-                    message_text = await format_message_with_username(r["message_stop_word_text"], user)
-                    if message_text:
-                        return await event.message.answer(
-                            message_text,
-                            parse_mode=ParseMode.HTML
-                        )
-
-        if r["link"]:
-            check = await has_link(event)
-            if check:
-                await event.message.delete()
-                if r["message_delete"]:
-                    print("xdxdxd")
-                    message_text = await format_message_with_username(r["message_link_text"], user)
+                if r.get("message_delete", False):
+                    message_text = await format_message_with_username(
+                        r.get("message_link_text", ""), user
+                    )
                     if message_text:
                         msg = await event.message.answer(
                             message_text,
                             parse_mode=ParseMode.HTML
                         )
-
-                        print(msg.message.body.mid)
-
                         bot_messages.append(msg.message.body.mid)
                         return msg
+
     except Exception as e:
-        print(f"Error: {e}")
-        pass
+        print(f"Error processing message: {e}")
 
     return True
-
 
 async def auto_delete_messages():
     """
