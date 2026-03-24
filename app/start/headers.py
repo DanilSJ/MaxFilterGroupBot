@@ -92,7 +92,7 @@ async def echo(event: MessageCreated):
     group_id = abs(event.chat.chat_id)
 
     r = await get_group(group_id)
-
+    print(r)
     if r.status_code != 200:
         return False
     r = r.json()
@@ -145,6 +145,7 @@ async def echo(event: MessageCreated):
             if check:
                 await event.message.delete()
                 if r["message_delete"]:
+                    print("xdxdxd")
                     message_text = await format_message_with_username(r["message_link_text"], user)
                     if message_text:
                         msg = await event.message.answer(
