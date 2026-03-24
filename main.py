@@ -10,7 +10,7 @@ async def main():
 
     await asyncio.gather(
         dp.start_polling(bot),
-        auto_delete_messages()
+        # auto_delete_messages()
     )
 
 
