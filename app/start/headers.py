@@ -75,7 +75,9 @@ async def is_chat_admin(chat_id, user_id):
         if hasattr(admins, 'members') and admins.members:
             for member in admins.members:
                 if member.is_admin and member.user_id == user_id:
+                    print("dadmin")
                     return True
+
 
         return False
 
