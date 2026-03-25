@@ -75,7 +75,6 @@ async def is_chat_admin(chat_id, user_id):
         if hasattr(admins, 'members') and admins.members:
             for member in admins.members:
                 if member.is_admin and member.user_id == user_id:
-                    print("dadmin")
                     return True
 
 
@@ -132,7 +131,6 @@ async def invalidate_group_cache(group_id: int):
 @router.message_created()
 async def echo(event: MessageCreated):
     group_id = abs(event.chat.chat_id)
-    print("dwdw")
     # Получаем данные из кэша вместо прямого запроса
     r = await get_group_cached(group_id)
     if not r:
