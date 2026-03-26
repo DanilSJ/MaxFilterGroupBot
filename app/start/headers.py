@@ -228,8 +228,7 @@ async def auto_delete_messages():
         for mid in messages_to_delete:
             try:
                 mid = mid.replace("mid.", "")
-                await bot.delete_message(mid)
-
+                print(await bot.delete_message(mid))
             except Exception as e:
                 if "not found" in str(e).lower():
                     continue
