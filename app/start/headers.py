@@ -207,6 +207,7 @@ async def echo(event: MessageCreated):
                             message_text,
                             parse_mode=ParseMode.HTML
                         )
+                        print(msg.message.body.mid)
                         bot_messages.append(msg.message.body.mid)
                         return msg
 
