@@ -220,16 +220,15 @@ async def auto_delete_messages():
     global bot_messages
 
     while True:
-        await asyncio.sleep(10)
+        await asyncio.sleep(120)
 
         messages_to_delete = bot_messages
         bot_messages = []
 
         for mid in messages_to_delete:
             try:
-                mid = mid.replace("mid.", "")
+                print(f"Удаляю: {mid}")
                 print(await bot.delete_message(mid))
+
             except Exception as e:
-                if "not found" in str(e).lower():
-                    continue
                 print(f"Ошибка удаления {mid}: {e}")
