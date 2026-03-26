@@ -156,10 +156,12 @@ async def echo(event: MessageCreated):
                         r.get("message_bad_text", ""), user
                     )
                     if message_text:
-                        return await event.message.answer(
+                        msg = await event.message.answer(
                             message_text,
                             parse_mode=ParseMode.HTML
                         )
+                        bot_messages.append(msg.message.body.mid)
+                        return msg
 
         # Проверка репостов
         if r.get("repost", False) and event.message.link:
@@ -169,10 +171,12 @@ async def echo(event: MessageCreated):
                     r.get("message_repost_text", ""), user
                 )
                 if message_text:
-                    return await event.message.answer(
+                    msg = await event.message.answer(
                         message_text,
                         parse_mode=ParseMode.HTML
                     )
+                    bot_messages.append(msg.message.body.mid)
+                    return msg
 
         # Проверка стоп-слов
         if r.get("stop_word", False) and r.get("stop_word_text"):
@@ -183,10 +187,12 @@ async def echo(event: MessageCreated):
                         r.get("message_stop_word_text", ""), user
                     )
                     if message_text:
-                        return await event.message.answer(
+                        msg = await event.message.answer(
                             message_text,
                             parse_mode=ParseMode.HTML
                         )
+                        bot_messages.append(msg.message.body.mid)
+                        return msg
 
         # Проверка ссылок
         if r.get("link", False):
