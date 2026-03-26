@@ -222,9 +222,10 @@ async def auto_delete_messages():
     """
     while True:
         await asyncio.sleep(120)
-
+        print(bot_messages)
         for msg in bot_messages[:]:
             try:
+                print(bot_messages)
                 print(msg)
                 await bot.delete_message(msg)
                 bot_messages.remove(msg)
