@@ -220,7 +220,7 @@ async def auto_delete_messages():
     global bot_messages
 
     while True:
-        await asyncio.sleep(10)
+        await asyncio.sleep(120)
 
         messages_to_delete = bot_messages
         bot_messages = []
