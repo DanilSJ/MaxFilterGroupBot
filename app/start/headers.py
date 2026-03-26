@@ -191,7 +191,7 @@ async def echo(event: MessageCreated):
                             message_text,
                             parse_mode=ParseMode.HTML
                         )
-                        bot_messages.append(msg.message.body.mid)
+                        bot_messages.append(msg.message.body.mid.replace("mid.", ""))
                         return msg
 
         # Проверка ссылок
@@ -208,7 +208,7 @@ async def echo(event: MessageCreated):
                             parse_mode=ParseMode.HTML
                         )
                         print(msg.message.body.mid)
-                        bot_messages.append(msg.message.body.mid)
+                        bot_messages.append(msg.message.body.mid.replace("mid.", ""))
                         return msg
 
     except Exception as e:
@@ -217,17 +217,19 @@ async def echo(event: MessageCreated):
     return True
 
 async def auto_delete_messages():
-    """
-    Каждые 2 минут удаляет сообщения бота
-    """
+    """Каждые 2 минут удаляет сообщения бота"""
+    global bot_messages
+
     while True:
         await asyncio.sleep(120)
-        print(bot_messages)
-        for msg in bot_messages[:]:
+
+        messages_to_delete = bot_messages
+        bot_messages = []
+
+        for mid in messages_to_delete:
             try:
-                print(bot_messages)
-                print(msg)
-                await bot.delete_message(msg)
-                bot_messages.remove(msg)
+                print(f"Удаляю: {mid}")
+                await bot.delete_message(mid)
+
             except Exception as e:
-                print(f"Ошибка удаления: {e}")
+                print(f"Ошибка удаления {mid}: {e}")
