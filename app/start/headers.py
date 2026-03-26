@@ -224,6 +224,7 @@ async def auto_delete_messages():
 
         for msg in bot_messages[:]:
             try:
+                print(msg)
                 await bot.delete_message(msg)
                 bot_messages.remove(msg)
             except Exception as e:
