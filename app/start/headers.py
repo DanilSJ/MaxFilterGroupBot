@@ -3,7 +3,7 @@ import time
 
 from maxapi import Router
 from maxapi.types import MessageCreated, Command
-from app.api.api import get_group
+from app.api.api import get_group, create_account
 from maxapi.enums.parse_mode import ParseMode
 from core.config import bot
 import asyncio
@@ -133,6 +133,8 @@ def is_blocked(user_id: int, block_users: list[dict]) -> bool:
 async def echo(event: MessageCreated):
     group_id = abs(event.chat.chat_id)
     user_id = event.from_user.user_id
+
+    await create_account(user_id)
 
     r = await get_group_cached(group_id)
 
