@@ -34,7 +34,6 @@ async def has_link(event):
     """
     Проверяет наличие ссылок в тексте с более строгими правилами
     """
-
     try:
         if hasattr(event, 'message') and hasattr(event.message, 'body'):
             if hasattr(event.message.body, 'markup') and event.message.body.markup:
@@ -127,14 +126,21 @@ async def invalidate_group_cache(group_id: int):
     if group_id in group_cache:
         del group_cache[group_id]
 
+def is_blocked(user_id: int, block_users: list[dict]) -> bool:
+    return any(u["max_id"] == user_id for u in block_users)
 
 @router.message_created()
 async def echo(event: MessageCreated):
     group_id = abs(event.chat.chat_id)
-    # Получаем данные из кэша вместо прямого запроса
+    user_id = event.from_user.user_id
+
     r = await get_group_cached(group_id)
+
     if not r:
         return False
+
+    if is_blocked(user_id, r["grid"].get("block_users", [])):
+        return await event.message.delete()
 
     try:
         user = event.message.sender
