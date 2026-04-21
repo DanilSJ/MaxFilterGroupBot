@@ -154,9 +154,6 @@ async def echo(event: MessageCreated):
     group_id = abs(event.chat.chat_id)
     user_id = event.from_user.user_id
 
-    print(f"{event.from_user.user_id}: {event.message}")
-    print(f"{event.from_user.user_id}: {event.message.body.markup}")
-
     await create_account(user_id)
 
     r = await get_group_cached(group_id)
