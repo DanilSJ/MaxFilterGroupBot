@@ -32,19 +32,39 @@ async def check_words_in_text(text, word_list):
 
 async def has_link(event):
     """
-    Проверяет наличие ссылок в тексте с более строгими правилами
+    Проверяет наличие ссылок:
+    - в markup
+    - в attachments (payload.url)
+    Текст НЕ проверяется
     """
     try:
-        if hasattr(event, 'message') and hasattr(event.message, 'body'):
-            if hasattr(event.message.body, 'markup') and event.message.body.markup:
-                for markup_item in event.message.body.markup:
-                    if hasattr(markup_item, 'type'):
-                        if markup_item.type == 'link' or markup_item.type == 'LINK':
-                            return True
-                        if hasattr(markup_item.type, 'LINK') and markup_item.type.LINK:
-                            return True
+        if not (hasattr(event, 'message') and hasattr(event.message, 'body')):
+            return False
+
+        body = event.message.body
+
+        # 1. Проверка markup
+        if hasattr(body, 'markup') and body.markup:
+            for markup_item in body.markup:
+                if hasattr(markup_item, 'type'):
+                    if markup_item.type in ('link', 'LINK'):
+                        return True
+                    if hasattr(markup_item.type, 'LINK') and markup_item.type.LINK:
+                        return True
+
+        # 2. Проверка attachments → payload.url
+        if hasattr(body, 'attachments') and body.attachments:
+            for attachment in body.attachments:
+                if hasattr(attachment, 'payload') and attachment.payload:
+                    payload = attachment.payload
+
+                    if hasattr(payload, 'url') and payload.url:
+                        return True
+
     except (IndexError, AttributeError, TypeError):
         return False
+
+    return False
 
 
 async def format_message_with_username(message_text, user):
