@@ -31,41 +31,46 @@ async def check_words_in_text(text, word_list):
 
 
 async def has_link(event):
-    """
-    Проверяет наличие ссылок:
-    - в markup
-    - в attachments (payload.url)
-    Текст НЕ проверяется
-    """
     try:
-        if not (hasattr(event, 'message') and hasattr(event.message, 'body')):
+        if not hasattr(event, 'message') or not hasattr(event.message, 'body'):
             return False
 
         body = event.message.body
 
-        # 1. Проверка markup
-        if hasattr(body, 'markup') and body.markup:
-            for markup_item in body.markup:
-                if hasattr(markup_item, 'type'):
-                    if markup_item.type in ('link', 'LINK'):
-                        return True
-                    if hasattr(markup_item.type, 'LINK') and markup_item.type.LINK:
+        if getattr(body, 'markup', None):
+            for m in body.markup:
+                if getattr(m, 'type', '').lower() == 'link':
+                    return True
+
+        if getattr(body, 'attachments', None):
+            for att in body.attachments:
+                payload = getattr(att, 'payload', None)
+
+                if att.type == 'image':
+                    continue
+
+                if att.type == 'video':
+                    continue
+
+                if att.type == 'link':
+                    return True
+
+                if payload:
+                    has_url = hasattr(payload, 'url') and payload.url
+
+                    is_media = (
+                        hasattr(payload, 'photo_id') or
+                        hasattr(payload, 'duration') or
+                        hasattr(payload, 'thumbnail')
+                    )
+
+                    if has_url and not is_media:
                         return True
 
-        # 2. Проверка attachments → payload.url
-        if hasattr(body, 'attachments') and body.attachments:
-            for attachment in body.attachments:
-                if hasattr(attachment, 'payload') and attachment.payload:
-                    payload = attachment.payload
-
-                    if hasattr(payload, 'url') and payload.url:
-                        return True
-
-    except (IndexError, AttributeError, TypeError):
+    except Exception:
         return False
 
     return False
-
 
 async def format_message_with_username(message_text, user):
     """
