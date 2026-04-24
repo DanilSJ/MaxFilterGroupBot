@@ -1,16 +1,24 @@
 import string
 import time
-
-from maxapi import Router
+from maxapi import Router, F
 from maxapi.types import MessageCreated, Command
 from app.api.api import get_group, create_account
 from maxapi.enums.parse_mode import ParseMode
 from core.config import bot
 import asyncio
+from maxapi.context import State, StatesGroup, MemoryContext
+
 
 router = Router()
 
 bot_messages = []
+
+group_cache = {}
+CACHE_TTL = 60
+
+
+class GetForm(StatesGroup):
+    wait = State()
 
 async def check_words_in_text(text, word_list):
     """
@@ -114,10 +122,6 @@ async def start(event: MessageCreated):
     await event.message.answer("Привет, чтобы настроить зайди в miniapp")
 
 
-group_cache = {}
-CACHE_TTL = 60  # Время жизни кэша в секундах
-
-
 async def get_group_cached(group_id: int):
     """
     Получает данные группы с кэшированием
@@ -154,11 +158,22 @@ async def invalidate_group_cache(group_id: int):
 def is_blocked(user_id: int, block_users: list[dict]) -> bool:
     return any(u["max_id"] == user_id for u in block_users)
 
+@router.message_created(Command('get'))
+async def get_cmd(event: MessageCreated, context: MemoryContext):
+    await context.set_state(GetForm.wait)
+
+    await event.message.answer("Отправь любое сообщение")
+
+@router.message_created(GetForm.wait)
+async def get_any_message(event: MessageCreated, context: MemoryContext):
+    await context.set_state(None)
+    await event.message.answer(f"ID: {event.message.link.sender.user_id} UserName: {event.message.link.sender.username}\nName: {event.message.link.sender.first_name} {event.message.link.sender.last_name}")
+
 @router.message_created()
 async def echo(event: MessageCreated):
     group_id = abs(event.chat.chat_id)
     user_id = event.from_user.user_id
-
+    print(user_id)
     await create_account(user_id)
 
     r = await get_group_cached(group_id)
