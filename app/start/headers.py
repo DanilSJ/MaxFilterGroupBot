@@ -47,7 +47,7 @@ async def has_link(event):
 
         if getattr(body, 'markup', None):
             for m in body.markup:
-                if getattr(m, 'type', '').lower() == 'link':
+                if getattr(m, 'type') == 'TextStyle.LINK':
                     return True
 
         if getattr(body, 'attachments', None):
@@ -173,7 +173,7 @@ async def get_any_message(event: MessageCreated, context: MemoryContext):
 async def echo(event: MessageCreated):
     group_id = abs(event.chat.chat_id)
     user_id = event.from_user.user_id
-    print(user_id)
+
     await create_account(user_id)
 
     r = await get_group_cached(group_id)
@@ -188,9 +188,9 @@ async def echo(event: MessageCreated):
         user = event.message.sender
 
         # Быстрая проверка на админа (тоже можно закэшировать)
-        is_admin_user = await is_chat_admin(event.chat.chat_id, user.user_id)
-        if is_admin_user:
-            return True
+        # is_admin_user = await is_chat_admin(event.chat.chat_id, user.user_id)
+        # if is_admin_user:
+        #     return True
 
         # Проверки с ранним выходом для оптимизации
         text = event.message.body.text if hasattr(event.message.body, 'text') else ""
@@ -255,7 +255,6 @@ async def echo(event: MessageCreated):
                             message_text,
                             parse_mode=ParseMode.HTML
                         )
-                        print(msg.message.body.mid)
                         bot_messages.append(msg.message.body.mid)
                         return msg
 
@@ -275,8 +274,6 @@ async def auto_delete_messages():
 
         for mid in messages_to_delete:
             try:
-                print(f"Удаляю: {mid}")
-                print(await bot.delete_message(mid))
-
+                await bot.delete_message(mid)
             except Exception as e:
                 print(f"Ошибка удаления {mid}: {e}")
